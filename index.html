@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FastDrop Manager</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --muted: #94a3b8;
+      --text: #f8fafc;
+      --accent: #22c55e;
+      --accent-2: #38bdf8;
+      --danger: #ef4444;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, Arial, sans-serif;
+      background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 14px 90px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    .title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 14px 10px;
+      font-size: .95rem;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(34,197,94,.25), rgba(56,189,248,.2));
+      border-color: rgba(34,197,94,.35);
+      transform: translateY(-1px);
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      grid-column: span 12;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .card.half { grid-column: span 6; }
+
+    .card h2, .card h3 {
+      margin: 0 0 14px;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-top: -6px;
+      margin-bottom: 14px;
+      font-size: .95rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: .92rem;
+      color: #dbeafe;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+      outline: none;
+      font-size: 1rem;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 14px 16px;
+      color: white;
+      font-weight: 700;
+      background: linear-gradient(135deg, #16a34a, #0284c7);
+      box-shadow: var(--shadow);
+    }
+
+    .btn.secondary {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn.danger {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .stats.two { grid-template-columns: repeat(2, 1fr); }
+
+    .stat {
+      padding: 16px;
+      border-radius: 16px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-bottom: 8px;
+    }
+
+    .stat .value {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+      background: #0b1220;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: .95rem;
+      vertical-align: middle;
+    }
+
+    th { color: #cbd5e1; }
+    td { color: #f8fafc; }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(34,197,94,.16);
+      color: #bbf7d0;
+      font-size: .82rem;
+      border: 1px solid rgba(34,197,94,.24);
+    }
+
+    .pill.warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fde68a;
+      border-color: rgba(245, 158, 11, 0.22);
+    }
+
+    .pill.info {
+      background: rgba(56,189,248,.16);
+      color: #bae6fd;
+      border-color: rgba(56,189,248,.24);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.5;
+    }
+
+    .top-right {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .small {
+      font-size: .85rem;
+      color: var(--muted);
+    }
+
+    .empty-box {
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .lock-screen {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      z-index: 20;
+    }
+
+    .lock-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hide { display: none !important; }
+
+    .employee-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .employee-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 980px) {
+      .tabs { grid-template-columns: repeat(3, 1fr); }
+      .card.half { grid-column: span 12; }
+    }
+
+    @media (max-width: 760px) {
+      .tabs { grid-template-columns: repeat(2, 1fr); }
+      .row, .stats, .stats.two { grid-template-columns: 1fr; }
+      .header { align-items: flex-start; flex-direction: column; }
+      .title h1 { font-size: 1.35rem; }
+      th, td { font-size: .87rem; }
+      .employee-item { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div id="lockScreen" class="lock-screen">
+    <div class="lock-card">
+      <div class="pill">Accès privé</div>
+      <h2>FastDrop Manager</h2>
+      <div class="field">
+        <label for="passwordInput">Mot de passe</label>
+        <input id="passwordInput" type="password" placeholder="Entre le mot de passe" />
+      </div>
+      <div class="actions">
+        <button class="btn" id="unlockBtn">Entrer</button>
+      </div>
+      <p id="lockError" class="small" style="color:#fca5a5;"></p>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="header">
+      <div class="title">
+        <h1>FastDrop Manager</h1>
+        <p>Calculateur, employés, historique, tableau du jour et stock des puffs.</p>
+      </div>
+      <div class="top-right">
+        <span class="pill">Sauvegarde locale sur ton téléphone</span>
+        <button class="btn secondary" id="resetAllBtn">Tout effacer</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="page1">Page 1 · Calculateur</button>
+      <button class="tab-btn" data-tab="page2">Page 2 · Paiement</button>
+      <button class="tab-btn" data-tab="page3">Page 3 · Historique</button>
+      <button class="tab-btn" data-tab="page4">Page 4 · Tableau du jour</button>
+      <button class="tab-btn" data-tab="page5">Page 5 · Stock puffs</button>
+      <button class="tab-btn" data-tab="page6">Page 6 · Gérer employés</button>
+    </div>
+
+    <section id="page1" class="page active">
+      <div class="grid">
+        <div class="card">
+          <h2>Calculateur de bénéfice</h2>
+          <p class="sub">Entre le prix d'achat, le prix de vente et la quantité. Le calcul se met à jour automatiquement.</p>
+          <div class="row">
+            <div class="field">
+              <label for="buyPrice">Prix d'achat unitaire (€)</label>
+              <input id="buyPrice" type="number" min="0" step="0.01" value="8" />
+            </div>
+            <div class="field">
+              <label for="sellPrice">Prix de vente unitaire (€)</label>
+              <input id="sellPrice" type="number" min="0" step="0.01" value="20" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="quantity">Quantité</label>
+              <input id="quantity" type="number" min="1" step="1" value="10" />
+            </div>
+            <div class="field">
+              <label for="deliveryFee">Frais de livraison facturés au client (€)</label>
+              <input id="deliveryFee" type="number" min="0" step="0.01" value="5" />
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="label">Bénéfice unitaire</div>
+              <div class="value" id="unitProfit">0,00 €</div>
+            </div>
+            <div class="stat">
+              <div class="label">Bénéfice total produits</div>
+              <div class="value" id="totalProfit">0,00 €</div>
+            </div>
+            <div class="stat">
+              <div class="label">Chiffre d'affaires</div>
+              <div class="value" id="revenue">0,00 €</div>
+            </div>
+            <div class="stat">
+              <div class="label">Coût total achat</div>
+              <div class="value" id="totalCost">0,00 €</div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="saveSaleBtn">Ajouter à l'historique</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page2" class="page">
+      <div class="grid">
+        <div class="card">
+          <h2>Paiement employés</h2>
+          <p class="sub">Tu sélectionnes l'employé, tu indiques son nombre de ventes, puis sa commission par vente. Le site calcule automatiquement son paiement.</p>
+
+          <div class="row">
+            <div class="field">
+              <label for="employeeName">Nom de l'employé</label>
+              <select id="employeeName"></select>
+            </div>
+            <div class="field">
+              <label for="employeeSales">Nombre de ventes</label>
+              <input id="employeeSales" type="number" min="0" step="1" value="10" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="employeeCommission">Commission par vente (€)</label>
+              <input id="employeeCommission" type="number" min="0" step="0.01" value="2" />
+            </div>
+            <div class="field">
+              <label>Paiement calculé</label>
+              <input id="employeeTotalReadonly" type="text" value="0,00 €" readonly />
+            </div>
+          </div>
+
+          <div class="stats two">
+            <div class="stat">
+              <div class="label">Commission par vente</div>
+              <div class="value" id="salarySales">0,00 €</div>
+            </div>
+            <div class="stat">
+              <div class="label">Paiement total employé</div>
+              <div class="value" id="salaryTotal">0,00 €</div>
+            </div>
+          </div>
+
+          <p class="note">
+            La marge nette entreprise et le paiement par livraison ont été retirés. Ici, tu gères uniquement le paiement par vente, employé par employé.
+          </p>
+
+          <div class="actions">
+            <button class="btn" id="saveEmployeeBtn">Enregistrer le paiement</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page3" class="page">
+      <div class="grid">
+        <div class="card">
+          <h2>Historique</h2>
+          <p class="sub">Tu retrouves ici les ventes, les paiements employés, les distributions/corrections de puffs et les paiements hebdomadaires.</p>
+
+          <h3>Ventes enregistrées</h3>
+          <div style="overflow:auto; margin-bottom:22px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Achat</th>
+                  <th>Vente</th>
+                  <th>Qté</th>
+                  <th>Bénéfice unitaire</th>
+                  <th>Bénéfice total</th>
+                </tr>
+              </thead>
+              <tbody id="salesHistoryBody"></tbody>
+            </table>
+          </div>
+
+          <h3>Paiements employés enregistrés</h3>
+          <div style="overflow:auto; margin-bottom:22px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Employé</th>
+                  <th>Ventes</th>
+                  <th>Commission / vente</th>
+                  <th>Paiement total</th>
+                </tr>
+              </thead>
+              <tbody id="employeeHistoryBody"></tbody>
+            </table>
+          </div>
+
+          <h3>Historique distribution puffs</h3>
+          <div style="overflow:auto; margin-bottom:22px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Employé</th>
+                  <th>Puffs données</th>
+                </tr>
+              </thead>
+              <tbody id="puffHistoryBody"></tbody>
+            </table>
+          </div>
+
+          <h3>Historique paiements hebdomadaires</h3>
+          <div style="overflow:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date de paiement</th>
+                  <th>Semaine</th>
+                  <th>Employé</th>
+                  <th>Ventes semaine</th>
+                  <th>Montant payé</th>
+                </tr>
+              </thead>
+              <tbody id="weeklyPayoutHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page4" class="page">
+      <div class="grid">
+        <div class="card">
+          <h2>Résumé du jour</h2>
+          <p class="sub">Vue rapide de ton activité du jour, du total global enregistré et des paiements hebdomadaires par employé.</p>
+          <div class="stats">
+            <div class="stat">
+              <div class="label">Total du jour</div>
+              <div class="value" id="todayRevenue">0,00 €</div>
+            </div>
+            <div class="stat">
+              <div class="label">Bénéfice du jour</div>
+              <div class="value" id="todayProfit">0,00 €</div>
+            </div>
+            <div class="stat">
+              <div class="label">Bénéfice global</div>
+              <div class="value" id="globalProfit">0,00 €</div>
+            </div>
+            <div class="stat">
+              <div class="label">Paiements employés globaux</div>
+              <div class="value" id="globalEmployeePaid">0,00 €</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Paiement hebdomadaire par employé</h2>
+          <p class="sub">Le tableau ci-dessous additionne chaque employé sur la semaine en cours. Le dimanche, tu peux cliquer sur le bouton pour enregistrer le paiement complet de la semaine.</p>
+          <div class="actions" style="margin-bottom:14px;">
+            <span class="pill info" id="currentWeekLabel">Semaine en cours</span>
+            <span class="pill warning" id="paydayInfo">Paiement conseillé le dimanche</span>
+          </div>
+          <div style="overflow:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Ventes semaine</th>
+                  <th>Montant semaine</th>
+                  <th>Statut</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="weeklyEmployeeBody"></tbody>
+            </table>
+          </div>
+          <p class="note" style="margin-top:16px;">
+            Une fois le paiement enregistré, il apparaît aussi dans l'historique. Si la semaine est déjà payée pour un employé, le site bloque le doublon.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="page5" class="page">
+      <div class="grid">
+        <div class="card">
+          <h2>Suivi actuel par employé</h2>
+          <p class="sub">Le tableau se met à jour avec les employés créés. Tu peux aussi corriger directement le total d'un employé si besoin.</p>
+          <div style="overflow:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Total puffs données</th>
+                  <th>Corriger le total</th>
+                </tr>
+              </thead>
+              <tbody id="puffSummaryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page6" class="page">
+      <div class="grid">
+        <div class="card half">
+          <h2>Créer un employé</h2>
+          <p class="sub">Ajoute les employés ici. Ensuite, tu pourras les sélectionner dans les autres pages.</p>
+          <div class="field">
+            <label for="newEmployeeName">Nom de l'employé</label>
+            <input id="newEmployeeName" type="text" placeholder="Ex : Lucas" />
+          </div>
+          <div class="actions">
+            <button class="btn" id="addEmployeeBtn">Ajouter l'employé</button>
+          </div>
+        </div>
+
+        <div class="card half">
+          <h2>Liste des employés</h2>
+          <p class="sub">Tu peux supprimer un employé de la liste. Les historiques déjà enregistrés restent conservés.</p>
+          <div id="employeeListContainer" class="employee-list"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const APP_PASSWORD = 'alex';
+    const tabs = document.querySelectorAll('.tab-btn');
+    const pages = document.querySelectorAll('.page');
+
+    const state = {
+      sales: JSON.parse(localStorage.getItem('fastdrop_sales') || '[]'),
+      employeeEntries: JSON.parse(localStorage.getItem('fastdrop_employee_entries') || '[]'),
+      employeeList: JSON.parse(localStorage.getItem('fastdrop_employee_list') || '[]'),
+      puffAssignments: JSON.parse(localStorage.getItem('fastdrop_puff_assignments') || '[]'),
+      weeklyPayouts: JSON.parse(localStorage.getItem('fastdrop_weekly_payouts') || '[]')
+    };
+
+    const euro = (value) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
+    const nowString = () => new Date().toLocaleString('fr-FR');
+    const todayDate = () => new Date().toLocaleDateString('fr-FR');
+    const normalizeName = (value) => value.trim().replace(/\s+/g, ' ');
+
+    function saveState() {
+      localStorage.setItem('fastdrop_sales', JSON.stringify(state.sales));
+      localStorage.setItem('fastdrop_employee_entries', JSON.stringify(state.employeeEntries));
+      localStorage.setItem('fastdrop_employee_list', JSON.stringify(state.employeeList));
+      localStorage.setItem('fastdrop_puff_assignments', JSON.stringify(state.puffAssignments));
+      localStorage.setItem('fastdrop_weekly_payouts', JSON.stringify(state.weeklyPayouts));
+    }
+
+    function ensureLegacyCompatibility() {
+      const oldEmployees = JSON.parse(localStorage.getItem('fastdrop_employees') || '[]');
+      if (oldEmployees.length && !state.employeeEntries.length) {
+        state.employeeEntries = oldEmployees.map(item => ({
+          date: item.date || nowString(),
+          day: item.day || todayDate(),
+          isoDate: item.isoDate || new Date().toISOString(),
+          name: item.name || 'Employé',
+          salesCount: Number(item.salesCount || 0),
+          commission: Number(item.commission || 0),
+          salaryTotal: Number(item.salaryTotal || 0)
+        }));
+      }
+
+      if (!state.employeeList.length && state.employeeEntries.length) {
+        const names = [...new Set(state.employeeEntries.map(item => item.name).filter(Boolean))];
+        state.employeeList = names;
+      }
+    }
+
+    function switchTab(id) {
+      tabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
+      pages.forEach(page => page.classList.toggle('active', page.id === id));
+    }
+
+    tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+    const buyPrice = document.getElementById('buyPrice');
+    const sellPrice = document.getElementById('sellPrice');
+    const quantity = document.getElementById('quantity');
+    const deliveryFee = document.getElementById('deliveryFee');
+
+    function salesCalc() {
+      const buy = Number(buyPrice.value || 0);
+      const sell = Number(sellPrice.value || 0);
+      const qty = Number(quantity.value || 0);
+
+      const unitProfit = sell - buy;
+      const totalProfit = unitProfit * qty;
+      const revenue = sell * qty;
+      const totalCost = buy * qty;
+
+      document.getElementById('unitProfit').textContent = euro(unitProfit);
+      document.getElementById('totalProfit').textContent = euro(totalProfit);
+      document.getElementById('revenue').textContent = euro(revenue);
+      document.getElementById('totalCost').textContent = euro(totalCost);
+
+      return { buy, sell, qty, unitProfit, totalProfit, revenue, totalCost, deliveryFee: Number(deliveryFee.value || 0) };
+    }
+
+    [buyPrice, sellPrice, quantity, deliveryFee].forEach(el => el.addEventListener('input', salesCalc));
+
+    document.getElementById('saveSaleBtn').addEventListener('click', () => {
+      const result = salesCalc();
+      if (result.qty <= 0) return alert('Entre une quantité valide.');
+
+      state.sales.unshift({
+        date: nowString(),
+        day: todayDate(),
+        isoDate: new Date().toISOString(),
+        ...result
+      });
+      saveState();
+      renderAll();
+      alert('Calcul ajouté à l\'historique.');
+    });
+
+    const employeeName = document.getElementById('employeeName');
+    const employeeSales = document.getElementById('employeeSales');
+    const employeeCommission = document.getElementById('employeeCommission');
+
+    function employeeCalc() {
+      const salesCount = Number(employeeSales.value || 0);
+      const commission = Number(employeeCommission.value || 0);
+      const salarySales = salesCount * commission;
+      const salaryTotal = salarySales;
+
+      document.getElementById('salarySales').textContent = euro(commission);
+      document.getElementById('salaryTotal').textContent = euro(salaryTotal);
+      document.getElementById('employeeTotalReadonly').value = euro(salaryTotal);
+
+      return { salesCount, commission, salaryTotal };
+    }
+
+    [employeeSales, employeeCommission].forEach(el => el.addEventListener('input', employeeCalc));
+
+    document.getElementById('saveEmployeeBtn').addEventListener('click', () => {
+      if (!state.employeeList.length) {
+        alert('Ajoute d\'abord un employé dans la page 6.');
+        switchTab('page6');
+        return;
+      }
+
+      const name = employeeName.value;
+      if (!name) return alert('Sélectionne un employé.');
+
+      const result = employeeCalc();
+      state.employeeEntries.unshift({
+        date: nowString(),
+        day: todayDate(),
+        isoDate: new Date().toISOString(),
+        name,
+        ...result
+      });
+      saveState();
+      renderAll();
+      alert('Paiement employé enregistré.');
+    });
+
+
+    document.getElementById('addEmployeeBtn').addEventListener('click', () => {
+      const input = document.getElementById('newEmployeeName');
+      const name = normalizeName(input.value);
+      if (!name) return alert('Entre un nom valide.');
+      if (state.employeeList.some(emp => emp.toLowerCase() === name.toLowerCase())) {
+        return alert('Cet employé existe déjà.');
+      }
+
+      state.employeeList.push(name);
+      state.employeeList.sort((a, b) => a.localeCompare(b, 'fr'));
+      input.value = '';
+      saveState();
+      renderAll();
+      alert('Employé ajouté.');
+    });
+
+    function deleteEmployee(name) {
+      if (!confirm(`Supprimer ${name} de la liste des employés ?`)) return;
+      state.employeeList = state.employeeList.filter(emp => emp !== name);
+      saveState();
+      renderAll();
+    }
+
+    function getStartOfWeek(date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      return d;
+    }
+
+    function getEndOfWeek(date) {
+      const start = getStartOfWeek(date);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return end;
+    }
+
+    function formatDateFr(date) {
+      return new Date(date).toLocaleDateString('fr-FR');
+    }
+
+    function getWeekKeyFromDate(date) {
+      const start = getStartOfWeek(date);
+      return start.toISOString().slice(0, 10);
+    }
+
+    function getCurrentWeekEntries() {
+      const start = getStartOfWeek(new Date());
+      const end = getEndOfWeek(new Date());
+      return state.employeeEntries.filter(item => {
+        const d = new Date(item.isoDate || item.date);
+        return d >= start && d <= end;
+      });
+    }
+
+    function getWeeklySummary() {
+      return state.employeeList.map(name => {
+        const entries = getCurrentWeekEntries().filter(item => item.name === name);
+        const salesCount = entries.reduce((sum, item) => sum + Number(item.salesCount || 0), 0);
+        const amount = entries.reduce((sum, item) => sum + Number(item.salaryTotal || 0), 0);
+        return { name, salesCount, amount };
+      });
+    }
+
+    function hasWeeklyPayout(name, weekKey) {
+      return state.weeklyPayouts.some(item => item.name === name && item.weekKey === weekKey);
+    }
+
+    function payEmployeeWeek(name) {
+      const weekKey = getWeekKeyFromDate(new Date());
+      const summary = getWeeklySummary().find(item => item.name === name);
+      if (!summary || summary.amount <= 0) {
+        alert('Aucun paiement à enregistrer pour cet employé cette semaine.');
+        return;
+      }
+      if (hasWeeklyPayout(name, weekKey)) {
+        alert('Cette semaine est déjà marquée comme payée pour cet employé.');
+        return;
+      }
+
+      const start = getStartOfWeek(new Date());
+      const end = getEndOfWeek(new Date());
+      state.weeklyPayouts.unshift({
+        date: nowString(),
+        isoDate: new Date().toISOString(),
+        weekKey,
+        weekLabel: `${formatDateFr(start)} au ${formatDateFr(end)}`,
+        name,
+        salesCount: summary.salesCount,
+        amount: summary.amount
+      });
+      saveState();
+      renderAll();
+      alert(`Paiement hebdomadaire enregistré pour ${name}.`);
+    }
+
+    function renderEmployeeSelects() {
+      const selects = [employeeName];
+      selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '';
+
+        if (!state.employeeList.length) {
+          select.innerHTML = '<option value="">Aucun employé créé</option>';
+          return;
+        }
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Sélectionne un employé';
+        select.appendChild(placeholder);
+
+        state.employeeList.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
+
+        if (state.employeeList.includes(currentValue)) {
+          select.value = currentValue;
+        } else {
+          select.selectedIndex = 1;
+        }
+      });
+    }
+
+    function renderSalesHistory() {
+      const body = document.getElementById('salesHistoryBody');
+      body.innerHTML = '';
+      if (!state.sales.length) {
+        body.innerHTML = '<tr><td colspan="6" class="small">Aucune vente enregistrée.</td></tr>';
+        return;
+      }
+
+      state.sales.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${euro(item.buy)}</td>
+          <td>${euro(item.sell)}</td>
+          <td>${item.qty}</td>
+          <td>${euro(item.unitProfit)}</td>
+          <td>${euro(item.totalProfit)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function renderEmployeeHistory() {
+      const body = document.getElementById('employeeHistoryBody');
+      body.innerHTML = '';
+      if (!state.employeeEntries.length) {
+        body.innerHTML = '<tr><td colspan="5" class="small">Aucun paiement employé enregistré.</td></tr>';
+        return;
+      }
+
+      state.employeeEntries.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.name}</td>
+          <td>${item.salesCount}</td>
+          <td>${euro(item.commission)}</td>
+          <td>${euro(item.salaryTotal)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function renderPuffHistory() {
+      const body = document.getElementById('puffHistoryBody');
+      body.innerHTML = '';
+      if (!state.puffAssignments.length) {
+        body.innerHTML = '<tr><td colspan="3" class="small">Aucune distribution de puffs enregistrée.</td></tr>';
+        return;
+      }
+
+      state.puffAssignments.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.name}</td>
+          <td>${item.qty}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function renderWeeklyPayoutHistory() {
+      const body = document.getElementById('weeklyPayoutHistoryBody');
+      body.innerHTML = '';
+      if (!state.weeklyPayouts.length) {
+        body.innerHTML = '<tr><td colspan="5" class="small">Aucun paiement hebdomadaire enregistré.</td></tr>';
+        return;
+      }
+
+      state.weeklyPayouts.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.weekLabel}</td>
+          <td>${item.name}</td>
+          <td>${item.salesCount}</td>
+          <td>${euro(item.amount)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function renderDashboard() {
+      const today = todayDate();
+      const todaySales = state.sales.filter(item => item.day === today);
+      const todayEmployeeEntries = state.employeeEntries.filter(item => item.day === today);
+
+      const todayRevenue = todaySales.reduce((sum, item) => sum + Number(item.revenue || 0), 0);
+      const todayProfit = todaySales.reduce((sum, item) => sum + Number(item.totalProfit || 0), 0) -
+                          todayEmployeeEntries.reduce((sum, item) => sum + Number(item.salaryTotal || 0), 0);
+      const globalProfit = state.sales.reduce((sum, item) => sum + Number(item.totalProfit || 0), 0) -
+                           state.employeeEntries.reduce((sum, item) => sum + Number(item.salaryTotal || 0), 0);
+      const globalEmployeePaid = state.employeeEntries.reduce((sum, item) => sum + Number(item.salaryTotal || 0), 0);
+
+      document.getElementById('todayRevenue').textContent = euro(todayRevenue);
+      document.getElementById('todayProfit').textContent = euro(todayProfit);
+      document.getElementById('globalProfit').textContent = euro(globalProfit);
+      document.getElementById('globalEmployeePaid').textContent = euro(globalEmployeePaid);
+
+      const start = getStartOfWeek(new Date());
+      const end = getEndOfWeek(new Date());
+      document.getElementById('currentWeekLabel').textContent = `Semaine : ${formatDateFr(start)} au ${formatDateFr(end)}`;
+      document.getElementById('paydayInfo').textContent = new Date().getDay() === 0
+        ? 'Aujourd\'hui : dimanche, tu peux payer la semaine complète'
+        : 'Paiement conseillé le dimanche';
+    }
+
+    function renderWeeklyEmployeeTable() {
+      const body = document.getElementById('weeklyEmployeeBody');
+      body.innerHTML = '';
+
+      if (!state.employeeList.length) {
+        body.innerHTML = '<tr><td colspan="5" class="small">Ajoute d\'abord des employés dans la page 6.</td></tr>';
+        return;
+      }
+
+      const weekKey = getWeekKeyFromDate(new Date());
+      const summary = getWeeklySummary();
+
+      summary.forEach(item => {
+        const paid = hasWeeklyPayout(item.name, weekKey);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.salesCount}</td>
+          <td>${euro(item.amount)}</td>
+          <td>${paid ? '<span class="pill">Payé</span>' : '<span class="pill warning">À payer</span>'}</td>
+          <td>
+            <button class="btn ${paid ? 'secondary' : ''}" ${paid || item.amount <= 0 ? 'disabled' : ''} data-pay-week="${item.name}">
+              ${paid ? 'Déjà payé' : 'Payer la semaine'}
+            </button>
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+
+      body.querySelectorAll('[data-pay-week]').forEach(button => {
+        button.addEventListener('click', () => payEmployeeWeek(button.dataset.payWeek));
+      });
+    }
+
+    function getPuffTotalForEmployee(name) {
+      return state.puffAssignments
+        .filter(item => item.name === name)
+        .reduce((sum, item) => sum + Number(item.qty || 0), 0);
+    }
+
+    function setPuffTotal(name, newTotal) {
+      const total = Number(newTotal);
+      if (!Number.isFinite(total) || total < 0) {
+        alert('Entre un total valide.');
+        return;
+      }
+
+      const currentTotal = getPuffTotalForEmployee(name);
+      const difference = total - currentTotal;
+
+      if (difference === 0) {
+        alert('Aucune modification à faire.');
+        return;
+      }
+
+      state.puffAssignments.unshift({
+        date: nowString(),
+        day: todayDate(),
+        isoDate: new Date().toISOString(),
+        name,
+        qty: difference
+      });
+      saveState();
+      renderAll();
+      alert(`Total mis à jour pour ${name}.`);
+    }
+
+    function renderPuffSummary() {
+      const body = document.getElementById('puffSummaryBody');
+      body.innerHTML = '';
+
+      if (!state.employeeList.length) {
+        body.innerHTML = '<tr><td colspan="3" class="small">Ajoute des employés pour suivre la distribution.</td></tr>';
+        return;
+      }
+
+      state.employeeList.forEach(name => {
+        const total = getPuffTotalForEmployee(name);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${total}</td>
+          <td>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <input type="number" min="0" step="1" value="${total}" data-puff-total-input="${name}" style="max-width:120px;" />
+              <button class="btn secondary" data-set-puff-total="${name}">Mettre à jour</button>
+            </div>
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+
+      body.querySelectorAll('[data-set-puff-total]').forEach(button => {
+        button.addEventListener('click', () => {
+          const name = button.dataset.setPuffTotal;
+          const input = body.querySelector(`[data-puff-total-input="${CSS.escape(name)}"]`);
+          if (!input) return;
+          setPuffTotal(name, input.value);
+        });
+      });
+    }
+
+    function renderEmployeeList() {
+      const container = document.getElementById('employeeListContainer');
+      container.innerHTML = '';
+
+      if (!state.employeeList.length) {
+        container.innerHTML = '<div class="empty-box">Aucun employé créé pour le moment.</div>';
+        return;
+      }
+
+      state.employeeList.forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'employee-item';
+        item.innerHTML = `
+          <div>
+            <strong>${name}</strong><br>
+            <span class="small">Disponible dans les pages paiement, historique et stock puffs.</span>
+          </div>
+          <button class="btn danger" data-delete-employee="${name}">Supprimer</button>
+        `;
+        container.appendChild(item);
+      });
+
+      container.querySelectorAll('[data-delete-employee]').forEach(button => {
+        button.addEventListener('click', () => deleteEmployee(button.dataset.deleteEmployee));
+      });
+    }
+
+    function renderAll() {
+      salesCalc();
+      employeeCalc();
+      renderEmployeeSelects();
+      renderSalesHistory();
+      renderEmployeeHistory();
+      renderPuffHistory();
+      renderWeeklyPayoutHistory();
+      renderDashboard();
+      renderWeeklyEmployeeTable();
+      renderPuffSummary();
+      renderEmployeeList();
+    }
+
+    document.getElementById('resetAllBtn').addEventListener('click', () => {
+      if (!confirm('Tu veux vraiment tout effacer ?')) return;
+      localStorage.removeItem('fastdrop_sales');
+      localStorage.removeItem('fastdrop_employee_entries');
+      localStorage.removeItem('fastdrop_employee_list');
+      localStorage.removeItem('fastdrop_puff_assignments');
+      localStorage.removeItem('fastdrop_weekly_payouts');
+      localStorage.removeItem('fastdrop_employees');
+      state.sales = [];
+      state.employeeEntries = [];
+      state.employeeList = [];
+      state.puffAssignments = [];
+      state.weeklyPayouts = [];
+      renderAll();
+    });
+
+    document.getElementById('unlockBtn').addEventListener('click', () => {
+      const value = document.getElementById('passwordInput').value;
+      if (value !== APP_PASSWORD) {
+        document.getElementById('lockError').textContent = 'Mot de passe incorrect.';
+        return;
+      }
+      document.getElementById('lockScreen').classList.add('hide');
+    });
+
+    document.getElementById('passwordInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('unlockBtn').click();
+    });
+
+    ensureLegacyCompatibility();
+    renderAll();
+  </script>
+</body>
+</html>
